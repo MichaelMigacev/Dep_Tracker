@@ -2,19 +2,28 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <LiquidCrystal_I2C.h>
 #include "time.h"
 #include "config.h"
 #include "Wifi_Connection.h"
 #include "Station_Info.h"
+#include "LCD_Interactions.h"
 
 WiFiConnection wifiConn;
 StationInfo statInf;
+LCDInteractions lcdInt;
 
 // Train monitoring
 const uint32_t trainsUpdateInterval = 20000UL; // 20 seconds
 uint32_t trainLastCheck = 0UL;
 uint32_t previousMillis = 0UL;
 uint32_t currentMillis = 0UL;
+
+// First LCD message while loading
+String lcdMessage1 = "Loading...";
+String lcdMessage2 = "";
+String lcdMessage3 = "";
+String lcdMessage4 = "";
 
 const uint8_t LEVER_PIN = 15U;
 bool lastLeverState = HIGH;
@@ -28,6 +37,10 @@ static constexpr uint8_t DEBOUNCE_DELAY_MS = 20U;
 void setup()
 {
   Serial.begin(115200);
+
+  lcdInt.setupLCD();
+
+  lcdInt.printLCDMessages(lcdMessage1, lcdMessage2, lcdMessage3, lcdMessage4);
 
   wifiConn.setupWiFi(
       ssid,
@@ -71,6 +84,7 @@ void loop()
 
     // Get departures
     DepartureList departures = statInf.getSouthboundJourneys(myStartStation, myEndStation);
+    lcdInt.displayDepartures(departures.departures, departures.count);
   }
 
   bool reading = digitalRead(LEVER_PIN);
@@ -96,6 +110,7 @@ void loop()
         myEndStation = toStation;
       }
       DepartureList departures = statInf.getSouthboundJourneys(myStartStation, myEndStation);
+      lcdInt.displayDepartures(departures.departures, departures.count);
     }
   }
   lastLeverState = reading;
