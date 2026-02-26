@@ -1,18 +1,34 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "time.h"
+#include "config.h"
+#include "Wifi_Connection.h"
 
-// put function declarations here:
-int myFunction(int, int);
+WiFiConnection wifiConn;
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+static constexpr uint8_t DEBOUNCE_DELAY_MS = 20U;
+
+void setup()
+{
+  Serial.begin(115200);
+
+  wifiConn.setupWiFi(
+      ssid,
+      password,
+      connectionAttempts,
+      maxAttempts);
+
+  // init and get time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop()
+{
+  wifiConn.maintainWiFi(
+      ssid,
+      password,
+      connectionAttempts,
+      maxAttempts,
+      checkInterval);
 }
